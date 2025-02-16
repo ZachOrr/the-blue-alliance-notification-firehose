@@ -1,6 +1,6 @@
-from google.appengine.ext import ndb
+from google.cloud import ndb
 
 
 class Notification(ndb.Model):
-    payload = ndb.StringProperty(required=True, indexed=False)
+    payload = ndb.TextProperty(required=True)
     created = ndb.DateTimeProperty(auto_now_add=True)

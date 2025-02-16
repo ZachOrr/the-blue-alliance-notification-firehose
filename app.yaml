@@ -1,26 +1,8 @@
-application: tba-notification-firehose
-version: 1
-runtime: python27
-api_version: 1
-threadsafe: yes
+runtime: python312
+entrypoint: gunicorn -b :$PORT main:app
 
 handlers:
-- url: /favicon\.ico
-  static_files: favicon.ico
-  upload: favicon\.ico
-- url: /material_test.html
-  static_files: static/material_test.html
-  upload: static/material_test.html
-- url: /js
-  static_dir: subtrees/material/dist/js
-- url: /css
-  static_dir: subtrees/material/dist/css
-- url: /javascript
-  static_dir: static/js
-
-- url: .*
-  script: main.app
-
-libraries:
-- name: webapp2
-  version: "2.5.2"
+- url: /static
+  static_dir: static
+- url: /.*
+  script: auto

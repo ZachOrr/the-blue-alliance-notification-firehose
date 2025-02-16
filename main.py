@@ -1,74 +1,68 @@
-#!/usr/bin/env python
-#
-# Copyright 2007 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-import hashlib
 import json
-import logging
-import os
-import webapp2
 
-from google.appengine.ext.webapp import template
+from flask import Flask, render_template, request, Response
+from google.cloud import ndb
 
 from models.notification import Notification
 
-SECRET = 'REPLACE_WITH_SECRET'
+
+SECRET = "REPLACE_WITH_SECRET"
+
+client = ndb.Client()
 
 
-class MainHandler(webapp2.RequestHandler):
-    def get(self):
-        notifications = Notification.query().order(-Notification.created).fetch(100)
-        notifications = [{"time": str(n.created), "payload": json.loads(n.payload)} for n in notifications]
+def ndb_wsgi_middleware(wsgi_app):
+    def middleware(environ, start_response):
+        with client.context():
+            return wsgi_app(environ, start_response)
 
-        template_values = {'notifications_json': json.dumps(notifications)}
-
-        path = os.path.join(os.path.dirname(__file__), "templates/notification_list_material.html")
-        self.response.write(template.render(path, template_values))
+    return middleware
 
 
-class SimpleHandler(webapp2.RequestHandler):
-    def get(self):
-
-        template_values = {}
-
-        path = os.path.join(os.path.dirname(__file__), "templates/notification_list.html")
-        self.response.write(template.render(path, template_values))
+app = Flask(__name__)
+app.wsgi_app = ndb_wsgi_middleware(app.wsgi_app)
 
 
-class WebhookHandler(webapp2.RequestHandler):
-    def get(self):
-        notifications = Notification.query().order(-Notification.created).fetch(100)
-        notifications = [{"time": str(n.created), "payload": json.loads(n.payload)} for n in notifications]
-        self.response.headers['content-type'] = 'application/json; charset="utf-8"'
-        self.response.write(json.dumps(notifications, indent=2, sort_keys=True))
+@app.route("/")
+def root():
+    notifications = Notification.query().order(-Notification.created).fetch(100)
+    notifications = [
+        {"time": str(n.created), "payload": json.loads(n.payload)}
+        for n in notifications
+    ]
+    return render_template(
+        "notification_list_material.html", notifications_json=json.dumps(notifications)
+    )
 
 
-class IncomingHandler(webapp2.RequestHandler):
-    def post(self):
-        checksum = self.request.headers['X-Tba-Checksum']
-        payload = self.request.body
+@app.route("/webhooks")
+def webhooks():
+    notifications = Notification.query().order(-Notification.created).fetch(100)
+    notifications = [
+        {"time": str(n.created), "payload": json.loads(n.payload)}
+        for n in notifications
+    ]
+    return notifications
 
-        if hashlib.sha1('{}{}'.format(SECRET, payload)).hexdigest() != checksum:
-            return
 
-        Notification(payload=payload).put()
+@app.route("/incoming", methods=["POST"])
+def incoming():
+    checksum = request.headers["X-TBA-HMAC"]
+    payload = request.data.decode("utf-8")
 
-app = webapp2.WSGIApplication([
-    ('/', MainHandler),
-    ('/simple', SimpleHandler),
-    ('/incoming', IncomingHandler),
-    ('/webhooks', WebhookHandler),
+    import hashlib, hmac
 
-], debug=True)
+    local_checksum = hmac.new(
+        SECRET.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+    if local_checksum != checksum:
+        return Response(status=400)
+
+    Notification(payload=payload).put()
+
+    return Response(status=200)
+
+
+if __name__ == "__main__":
+    app.run(port=8080, debug=True)
