@@ -1,5 +1,7 @@
 import json
+import logging
 
+import google.cloud.logging
 from flask import Flask, render_template, request, Response
 from google.cloud import ndb
 
@@ -7,6 +9,9 @@ from models.notification import Notification
 
 
 SECRET = "REPLACE_WITH_SECRET"
+
+logging_client = google.cloud.logging.Client()
+logging_client.setup_logging()
 
 client = ndb.Client()
 
@@ -51,6 +56,15 @@ def incoming():
     payload = request.data.decode("utf-8")
 
     import hashlib, hmac
+
+    try:
+        json_payload = request.get_json()
+        if json_payload["message_type"] == "verification":
+            verification_key = json_payload["message_data"]["verification_key"]
+            logging.info(f"Verification key: {verification_key}")
+            return Response(status=200)
+    except:
+        pass
 
     local_checksum = hmac.new(
         SECRET.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256
