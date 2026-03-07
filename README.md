@@ -59,8 +59,85 @@ $ gcloud config set project PROJECT_ID
 
 You will likely have to [enable billing](https://cloud.google.com/billing/docs/how-to/modify-project) for your project.
 
+### Secrets Setup
+
+This app uses [Google Cloud Secret Manager](https://cloud.google.com/secret-manager) to store the TBA webhook secret.
+
+For local development, create a `.env` file with your TBA webhook secret:
+
+```
+$ echo 'TBA_SECRET=YOUR_TBA_SECRET' > .env
+```
+
+For production, enable the Secret Manager API:
+
+```
+$ gcloud services enable secretmanager.googleapis.com --project=PROJECT_ID
+```
+
+Create the secret with your TBA webhook secret value:
+
+```
+$ echo -n "YOUR_TBA_SECRET" | gcloud secrets create TBA_SECRET --data-file=- --project=PROJECT_ID
+```
+
+Grant your App Engine service account access to read the secret:
+
+```
+$ gcloud secrets add-iam-policy-binding TBA_SECRET \
+    --member="serviceAccount:PROJECT_ID@appspot.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor" \
+    --project=PROJECT_ID
+```
+
+### Deploy
+
 Deploy the app
 
 ```
 $ gcloud app deploy
+```
+
+### Continuous Deployment (GitHub Actions)
+
+This repo includes a GitHub Actions workflow that auto-deploys to App Engine on every push to `main`.
+
+Create a service account and download a JSON key:
+
+```
+$ gcloud iam service-accounts create github-deploy \
+    --display-name="GitHub Deploy" \
+    --project=PROJECT_ID
+
+$ gcloud projects add-iam-policy-binding PROJECT_ID \
+    --member="serviceAccount:github-deploy@PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/appengine.deployer"
+
+$ gcloud projects add-iam-policy-binding PROJECT_ID \
+    --member="serviceAccount:github-deploy@PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/appengine.serviceAdmin"
+
+$ gcloud projects add-iam-policy-binding PROJECT_ID \
+    --member="serviceAccount:github-deploy@PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/cloudbuild.builds.builder"
+
+$ gcloud projects add-iam-policy-binding PROJECT_ID \
+    --member="serviceAccount:github-deploy@PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/storage.admin"
+
+$ gcloud iam service-accounts keys create key.json \
+    --iam-account=github-deploy@PROJECT_ID.iam.gserviceaccount.com
+```
+
+Set these two secrets in your GitHub repo (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|---|---|
+| `GCLOUD_AUTH` | Contents of the `key.json` file |
+| `GCLOUD_PROJECT_ID` | Your GCP project ID |
+
+After setting the secrets, delete the local key file:
+
+```
+$ rm key.json
 ```
