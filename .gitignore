@@ -27,6 +27,10 @@
 *.sql
 *.sqlite
 
+# Environment files #
+#####################
+.env
+
 # OS generated files #
 ######################
 # OS X
