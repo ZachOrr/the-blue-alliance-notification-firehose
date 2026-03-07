@@ -100,9 +100,15 @@ $ gcloud app deploy
 
 ### Continuous Deployment (GitHub Actions)
 
-This repo includes a GitHub Actions workflow that auto-deploys to App Engine on every push to `main`.
+This repo includes a GitHub Actions workflow that auto-deploys to App Engine on every push to `master`.
 
-Create a service account and download a JSON key:
+Enable the App Engine Admin API:
+
+```
+$ gcloud services enable appengine.googleapis.com --project=PROJECT_ID
+```
+
+Create a service account, grant it the necessary roles, and download a JSON key:
 
 ```
 $ gcloud iam service-accounts create github-deploy \
@@ -124,6 +130,12 @@ $ gcloud projects add-iam-policy-binding PROJECT_ID \
 $ gcloud projects add-iam-policy-binding PROJECT_ID \
     --member="serviceAccount:github-deploy@PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/storage.admin"
+
+$ gcloud iam service-accounts add-iam-policy-binding \
+    PROJECT_ID@appspot.gserviceaccount.com \
+    --member="serviceAccount:github-deploy@PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/iam.serviceAccountUser" \
+    --project=PROJECT_ID
 
 $ gcloud iam service-accounts keys create key.json \
     --iam-account=github-deploy@PROJECT_ID.iam.gserviceaccount.com
