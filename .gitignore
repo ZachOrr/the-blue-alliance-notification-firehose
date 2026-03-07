@@ -57,7 +57,6 @@ $RECYCLE.BIN/
 ###############################
 static/css/less_css/*.css
 static/css/*.css
-static/javascript/*.js
 version_info.json
 
 # Byte-compiled / optimized / DLL files
