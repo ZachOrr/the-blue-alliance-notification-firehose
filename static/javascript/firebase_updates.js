@@ -196,6 +196,7 @@ function buildNotificationCard(data){
     }
     var heading = $('<div>', {
         'class': 'panel-heading',
-    }).append($('<span>', {'class': 'pull-right', text: time})).append(document.createTextNode(headingText));
+        text: headingText
+    }).append($('<span>', {'class': 'pull-right', text: time}));
     return card.append(heading).append(body);
 }
