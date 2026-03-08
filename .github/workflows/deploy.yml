@@ -18,3 +18,4 @@ jobs:
       - uses: google-github-actions/deploy-appengine@v2
         with:
           project_id: ${{ secrets.GCLOUD_PROJECT_ID }}
+          version: 1
