@@ -1,6 +1,8 @@
-# Deploy only what App Engine Standard needs: app.yaml, *.go, go.mod, go.sum
-*
-!app.yaml
-!*.go
-!go.mod
-!go.sum
+# Ignore files not needed for App Engine deployment
+.gcloudignore
+.git
+.gitignore
+__pycache__/
+*.pyc
+.env
+.venv/
