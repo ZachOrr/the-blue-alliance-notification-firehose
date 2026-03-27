@@ -1,0 +1,11 @@
+.gcloudignore
+.git
+.gitignore
+.venv/
+.env
+__pycache__/
+
+# Dev tooling (not needed at runtime)
+pyproject.toml
+uv.lock
+openapi-config.yaml

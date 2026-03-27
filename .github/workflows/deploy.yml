@@ -5,17 +5,70 @@ on:
     branches: [master]
 
 jobs:
-  deploy:
+  changes:
     runs-on: ubuntu-latest
-
+    outputs:
+      dashboard: ${{ steps.filter.outputs.dashboard }}
+      incoming: ${{ steps.filter.outputs.incoming }}
+      dispatch: ${{ steps.filter.outputs.dispatch }}
     steps:
       - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            dashboard:
+              - 'dashboard/**'
+              - 'shared/**'
+            incoming:
+              - 'incoming/**'
+              - 'shared/**'
+            dispatch:
+              - 'dispatch.yaml'
 
+  deploy-dashboard:
+    needs: changes
+    if: needs.changes.outputs.dashboard == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCLOUD_AUTH }}
-
+      - run: cp -r shared/ dashboard/shared/
+      - run: cd dashboard && uv export --format requirements-txt --no-hashes --no-dev -o requirements.txt
       - uses: google-github-actions/deploy-appengine@v2
         with:
           project_id: ${{ secrets.GCLOUD_PROJECT_ID }}
+          working_directory: dashboard
           version: 1
+
+  deploy-incoming:
+    needs: changes
+    if: needs.changes.outputs.incoming == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCLOUD_AUTH }}
+      - run: cp -r shared/ incoming/shared/
+      - run: cd incoming && uv export --format requirements-txt --no-hashes --no-dev -o requirements.txt
+      - uses: google-github-actions/deploy-appengine@v2
+        with:
+          project_id: ${{ secrets.GCLOUD_PROJECT_ID }}
+          working_directory: incoming
+          version: 1
+
+  deploy-dispatch:
+    needs: changes
+    if: needs.changes.outputs.dispatch == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCLOUD_AUTH }}
+      - run: gcloud app deploy dispatch.yaml --project=${{ secrets.GCLOUD_PROJECT_ID }} --quiet
