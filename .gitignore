@@ -219,6 +219,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Generated requirements files
+requirements.txt
+
 # pytype static type analyzer
 .pytype/
 

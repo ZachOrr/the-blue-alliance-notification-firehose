@@ -1,87 +1,91 @@
 # TBA Notification Firehose
 
-This is a simple, demo webapp for receiving webhooks from The Blue Alliance. It has been subscribed to the 'firehose' key, so it will receive notifications for all events this year.
+A webapp for receiving and monitoring webhooks from The Blue Alliance. Subscribed to the 'firehose' key, so it receives notifications for all events this year.
 
 Demo app: http://tba-notification-firehose.appspot.com/
 
-Styling provided by [Bootstrap Material Design](http://fezvrasta.github.io/bootstrap-material-design)
+## Architecture
 
-## Running Locally
+The app is split into two GAE services:
 
-Make sure you have the [gcloud cli](https://cloud.google.com/sdk/docs/install) installed.
+- **`dashboard/`** (Python) — Read-only web UI for viewing recent notifications. Default service.
+- **`incoming/`** (Python) — Lightweight webhook receiver that validates HMAC signatures and writes to Datastore.
+- **`shared/`** — Shared Python package containing the `Notification` model, ndb helpers, and secret loading used by both services.
 
-Follow the instructions to install the [Datastore emulator](https://cloud.google.com/datastore/docs/tools/datastore-emulator).
+A `dispatch.yaml` routes `/incoming` requests to the incoming service; everything else is handled by the dashboard.
 
-The instructions are a little wonky in the links above, so here's directions for getting the Datastore emulator running on Linux/macOS. YMMV.
+## Setup
 
-Start the datastore emulator (install the emulator if it is not already installed)
+### GCP Project
 
-```
-gcloud beta emulators datastore start
-```
-
-You should see a `Dev App Server is now running.` message indicating the server has started.
-
-In another terminal session (we will run our app in this session) setup the required environment variables
-
-```
-$(gcloud beta emulators datastore env-init)
-```
-
-You can confirm the variables are setup -
-
-```
-echo $DATASTORE_EMULATOR_HOST
-> localhost:8081
-```
-
-Run the app
-
-```
-$ python main.py
-```
-
-A tool like ngrok can be used to point the production TBA website at your local instance to test webhooks. Alternatively you can setup a local instance of TBA to test webhooks against your local firehose instance. Both of these are left as an exercise to the reader.
-
-## Deploying
-
-Create a project
+Create a project or use an existing one:
 
 ```
 $ gcloud projects create PROJECT_ID
-```
-
-or if you have an existing project
-
-```
 $ gcloud config set project PROJECT_ID
 ```
 
 You will likely have to [enable billing](https://cloud.google.com/billing/docs/how-to/modify-project) for your project.
 
+### `.env` file
+
+Create a `.env` file in the repo root with your secrets:
+
+```
+TBA_SECRET=YOUR_TBA_SECRET
+GOOGLE_CLOUD_PROJECT=PROJECT_ID
+```
+
+For local development, the app reads secrets from `.env` first, falling back to Secret Manager in production.
+
+## Running Locally
+
+### Docker (both services)
+
+Run both the dashboard and incoming services locally via Docker Compose with a Datastore emulator:
+
+```
+$ make docker-up
+```
+
+This starts three containers: a Datastore emulator, the Flask dashboard, and the Flask incoming service.
+
+- Dashboard: http://localhost:8080
+- Incoming webhook: http://localhost:8081/incoming
+- Datastore emulator: http://localhost:8432
+
+Source files are volume-mounted, so changes are reflected immediately (restart the container to pick them up).
+
+To stop: `make docker-down` or <kbd>Ctrl+C</kbd>.
+
+### Dashboard only (no Docker)
+
+The dashboard can also run standalone against your GCP project's Datastore in read-only mode:
+
+```
+$ gcloud auth application-default login
+$ make run
+```
+
+The dashboard will be available at http://localhost:8080.
+
+## Deploying
+
 ### Secrets Setup
 
-This app uses [Google Cloud Secret Manager](https://cloud.google.com/secret-manager) to store the TBA webhook secret.
-
-For local development, create a `.env` file with your TBA webhook secret:
-
-```
-$ echo 'TBA_SECRET=YOUR_TBA_SECRET' > .env
-```
-
-For production, enable the Secret Manager API:
+Enable the Secret Manager API:
 
 ```
 $ gcloud services enable secretmanager.googleapis.com --project=PROJECT_ID
 ```
 
-Create the secret with your TBA webhook secret value:
+Create secrets with your values:
 
 ```
 $ echo -n "YOUR_TBA_SECRET" | gcloud secrets create TBA_SECRET --data-file=- --project=PROJECT_ID
 ```
 
-Grant your App Engine service account access to read the secret:
+Grant your App Engine service account access:
 
 ```
 $ gcloud secrets add-iam-policy-binding TBA_SECRET \
@@ -92,10 +96,8 @@ $ gcloud secrets add-iam-policy-binding TBA_SECRET \
 
 ### Deploy
 
-Deploy the app
-
 ```
-$ gcloud app deploy
+$ gcloud app deploy dashboard/app.yaml incoming/app.yaml dispatch.yaml
 ```
 
 ### Continuous Deployment (GitHub Actions)
