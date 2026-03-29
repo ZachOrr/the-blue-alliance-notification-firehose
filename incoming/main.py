@@ -1,6 +1,5 @@
 import hashlib
 import hmac
-import json
 import logging
 
 from flask import Flask, Response, request
@@ -21,28 +20,27 @@ app.wsgi_app = ndb_wsgi_middleware(client, app.wsgi_app)
 
 
 @app.route("/incoming", methods=["POST"])
-def incoming():
+def incoming() -> Response:
     checksum = request.headers.get("X-TBA-HMAC")
     if not checksum:
         return Response(status=400)
 
     payload = request.data.decode("utf-8")
 
-    try:
-        json_payload = request.get_json()
-        if json_payload["message_type"] == "verification":
-            verification_key = json_payload["message_data"]["verification_key"]
-            logging.info(f"Verification key: {verification_key}")
-            return Response(status=200)
-    except Exception:
-        pass
-
     local_checksum = hmac.new(
         SECRET.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256
     ).hexdigest()
-
-    if local_checksum != checksum:
+    if not hmac.compare_digest(local_checksum, checksum):
         return Response(status=400)
+
+    json_payload = request.get_json(silent=True) or {}
+    message_type = json_payload.get("message_type")
+
+    if message_type == "verification":
+        verification_key = json_payload.get("message_data", {}).get("verification_key")
+        if verification_key:
+            logging.info(f"Verification key: {verification_key}")
+        return Response(status=200)
 
     Notification(payload=payload).put()
 

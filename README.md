@@ -40,6 +40,18 @@ For local development, the app reads secrets from `.env` first, falling back to 
 
 ## Running Locally
 
+### Install Dependencies
+
+Install all workspace dependencies into the root `.venv`:
+
+```
+$ uv sync
+```
+
+This must be run after cloning and after any changes to `pyproject.toml` files. VS Code is pre-configured (via `.vscode/settings.json`) to use this venv, so import errors in the editor should resolve automatically after syncing.
+
+### Run
+
 The dashboard can run standalone against your GCP project's Datastore in read-only mode:
 
 ```
