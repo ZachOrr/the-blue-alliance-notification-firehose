@@ -1,9 +1,0 @@
-.git/
-.env
-__pycache__/
-*.pyc
-*.pyo
-.DS_Store*
-*.log
-*.sqlite
-dashboard/.venv/

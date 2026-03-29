@@ -40,27 +40,7 @@ For local development, the app reads secrets from `.env` first, falling back to 
 
 ## Running Locally
 
-### Docker (both services)
-
-Run both the dashboard and incoming services locally via Docker Compose with a Datastore emulator:
-
-```
-$ make docker-up
-```
-
-This starts three containers: a Datastore emulator, the Flask dashboard, and the Flask incoming service.
-
-- Dashboard: http://localhost:8080
-- Incoming webhook: http://localhost:8081/incoming
-- Datastore emulator: http://localhost:8432
-
-Source files are volume-mounted, so changes are reflected immediately (restart the container to pick them up).
-
-To stop: `make docker-down` or <kbd>Ctrl+C</kbd>.
-
-### Dashboard only (no Docker)
-
-The dashboard can also run standalone against your GCP project's Datastore in read-only mode:
+The dashboard can run standalone against your GCP project's Datastore in read-only mode:
 
 ```
 $ gcloud auth application-default login

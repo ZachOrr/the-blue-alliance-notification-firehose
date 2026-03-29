@@ -741,22 +741,14 @@ version = "0.1.0"
 source = { virtual = "incoming" }
 dependencies = [
     { name = "flask" },
-    { name = "google-cloud-logging" },
-    { name = "google-cloud-ndb" },
-    { name = "google-cloud-secret-manager" },
     { name = "gunicorn" },
-    { name = "python-dotenv" },
     { name = "tba-shared" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "flask", specifier = "==3.1.2" },
-    { name = "google-cloud-logging" },
-    { name = "google-cloud-ndb" },
-    { name = "google-cloud-secret-manager" },
     { name = "gunicorn", specifier = "==23.0.0" },
-    { name = "python-dotenv" },
     { name = "tba-shared", editable = "shared" },
 ]
 
@@ -766,22 +758,14 @@ version = "0.1.0"
 source = { virtual = "dashboard" }
 dependencies = [
     { name = "flask" },
-    { name = "google-cloud-logging" },
-    { name = "google-cloud-ndb" },
-    { name = "google-cloud-secret-manager" },
     { name = "gunicorn" },
-    { name = "python-dotenv" },
     { name = "tba-shared" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "flask", specifier = "==3.1.2" },
-    { name = "google-cloud-logging" },
-    { name = "google-cloud-ndb" },
-    { name = "google-cloud-secret-manager" },
     { name = "gunicorn", specifier = "==23.0.0" },
-    { name = "python-dotenv" },
     { name = "tba-shared", editable = "shared" },
 ]
 
@@ -790,14 +774,18 @@ name = "tba-shared"
 version = "0.1.0"
 source = { editable = "shared" }
 dependencies = [
+    { name = "google-cloud-logging" },
     { name = "google-cloud-ndb" },
     { name = "google-cloud-secret-manager" },
+    { name = "python-dotenv" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "google-cloud-logging" },
     { name = "google-cloud-ndb" },
     { name = "google-cloud-secret-manager" },
+    { name = "python-dotenv" },
 ]
 
 [[package]]

@@ -3,6 +3,8 @@ import os
 import google.auth
 from google.cloud import ndb
 
+from shared.config import is_local, project
+
 
 def create_ndb_client(*, readonly=False):
     """Create an ndb Client configured for the current environment.
@@ -11,9 +13,6 @@ def create_ndb_client(*, readonly=False):
     if DATASTORE_EMULATOR_HOST is set, otherwise falls back to application-default
     credentials with an appropriate scope.
     """
-    project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    is_local = os.environ.get("GAE_ENV") in (None, "localdev")
-
     if not is_local:
         return ndb.Client(project=project)
 

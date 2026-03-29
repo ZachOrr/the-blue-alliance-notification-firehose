@@ -36,9 +36,8 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCLOUD_AUTH }}
+      - run: make requirements
       - run: cp -r shared/ dashboard/shared/
-      - run: uv export --package tba-notification-firehose --format requirements-txt --no-hashes --no-dev -o dashboard/requirements.txt
-      - run: sed -i 's|-e ./shared|./shared|' dashboard/requirements.txt
       - uses: google-github-actions/deploy-appengine@v2
         with:
           project_id: ${{ secrets.GCLOUD_PROJECT_ID }}
@@ -55,9 +54,8 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCLOUD_AUTH }}
+      - run: make requirements
       - run: cp -r shared/ incoming/shared/
-      - run: uv export --package tba-incoming --format requirements-txt --no-hashes --no-dev -o incoming/requirements.txt
-      - run: sed -i 's|-e ./shared|./shared|' incoming/requirements.txt
       - uses: google-github-actions/deploy-appengine@v2
         with:
           project_id: ${{ secrets.GCLOUD_PROJECT_ID }}

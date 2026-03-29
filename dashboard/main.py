@@ -1,23 +1,12 @@
 import json
-import logging
-import os
 
-import google.cloud.logging
-from dotenv import load_dotenv
 from flask import Flask, render_template, Response
 
+from shared.config import is_local, setup_logging
 from shared.ndb import create_ndb_client, ndb_wsgi_middleware
 from shared.notification import Notification
 
-load_dotenv()
-
-
-_project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-_is_local = os.environ.get("GAE_ENV") in (None, "localdev")
-
-if not _is_local:
-    logging_client = google.cloud.logging.Client(project=_project)
-    logging_client.setup_logging()
+setup_logging()
 
 client = create_ndb_client(readonly=True)
 
@@ -48,4 +37,4 @@ def webhooks():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=_is_local)
+    app.run(host="0.0.0.0", port=8080, debug=is_local)
