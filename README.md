@@ -4,6 +4,27 @@ A webapp for receiving and monitoring webhooks from The Blue Alliance. Subscribe
 
 Demo app: http://tba-notification-firehose.appspot.com/
 
+## Prerequisites
+
+Install these tools before setup:
+
+- `uv` (Python package/env manager)
+- `nvm` (Node version manager)
+- `gcloud` CLI
+
+Suggested install docs:
+
+- `uv`: https://docs.astral.sh/uv/getting-started/installation/
+- `nvm`: https://github.com/nvm-sh/nvm#installing-and-updating
+- `gcloud`: https://cloud.google.com/sdk/docs/install
+
+After installing `nvm`, use Node 24 from the frontend directory (the only location that has `.nvmrc`):
+
+```
+$ cd dashboard/frontend
+$ nvm use
+```
+
 ## Architecture
 
 The app is split into two GAE services:
@@ -49,6 +70,14 @@ $ uv sync
 ```
 
 This must be run after cloning and after any changes to `pyproject.toml` files. VS Code is pre-configured (via `.vscode/settings.json`) to use this venv, so import errors in the editor should resolve automatically after syncing.
+
+Install frontend dependencies with Node 24:
+
+```
+$ cd dashboard/frontend
+$ nvm use
+$ npm ci
+```
 
 ### Run
 
