@@ -64,10 +64,49 @@ const formatNotificationType = (type: NotificationType): string => {
   return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
+const TBA_BASE_URL = 'https://www.thebluealliance.com';
+
+interface PayloadMeta {
+  eventKey?: string;
+  eventName?: string;
+  matchKey?: string;
+  teamKeys?: string[];
+  compLevel?: string;
+  title?: string;
+}
+
+function extractMeta(payload: Record<string, unknown>): PayloadMeta {
+  const data = (payload.message_data ?? {}) as Record<string, unknown>;
+  const meta: PayloadMeta = {};
+
+  if (typeof data.event_key === 'string') meta.eventKey = data.event_key;
+  if (typeof data.event_name === 'string') meta.eventName = data.event_name;
+  if (typeof data.match_key === 'string') meta.matchKey = data.match_key;
+  if (typeof data.comp_level === 'string') meta.compLevel = data.comp_level;
+  if (Array.isArray(data.team_keys)) meta.teamKeys = data.team_keys as string[];
+
+  // ping / broadcast use title
+  if (typeof data.title === 'string') meta.title = data.title;
+
+  return meta;
+}
+
+const TbaLink: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="underline decoration-current/50 hover:decoration-current font-semibold"
+  >
+    {children}
+  </a>
+);
+
 export const NotificationCard: React.FC<NotificationCardProps> = ({ notification, timestampMode }) => {
   const baseClasses = 'border-2 rounded-lg p-4 mb-4 transition-shadow hover:shadow-md';
   const colorClasses = getTypeColor(notification.type);
   const darkColorClasses = getTypeDarkColor(notification.type);
+  const meta = extractMeta(notification.payload);
 
   return (
     <div className={`${baseClasses} ${colorClasses} ${darkColorClasses}`}>
@@ -81,6 +120,45 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({ notification
               {formatDate(notification.timestamp, timestampMode)}
             </span>
           </div>
+
+          {/* Prominent metadata row */}
+          {(meta.eventKey || meta.matchKey || meta.title) && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-sm">
+              {meta.eventName && meta.eventKey && (
+                <TbaLink href={`${TBA_BASE_URL}/event/${meta.eventKey}`}>
+                  {meta.eventName}
+                </TbaLink>
+              )}
+              {meta.eventKey && (
+                <TbaLink href={`${TBA_BASE_URL}/event/${meta.eventKey}`}>
+                  <code className="text-xs bg-white/30 dark:bg-black/30 px-1.5 py-0.5 rounded">
+                    {meta.eventKey}
+                  </code>
+                </TbaLink>
+              )}
+              {meta.matchKey && (
+                <TbaLink href={`${TBA_BASE_URL}/match/${meta.matchKey}`}>
+                  <code className="text-xs bg-white/30 dark:bg-black/30 px-1.5 py-0.5 rounded">
+                    {meta.matchKey}
+                  </code>
+                </TbaLink>
+              )}
+              {meta.teamKeys && meta.teamKeys.length > 0 && (
+                <span className="text-xs opacity-80">
+                  {meta.teamKeys.map((tk, i) => (
+                    <span key={tk}>
+                      {i > 0 && ', '}
+                      <TbaLink href={`${TBA_BASE_URL}/team/${tk.replace('frc', '')}`}>{tk}</TbaLink>
+                    </span>
+                  ))}
+                </span>
+              )}
+              {meta.title && (
+                <span className="font-semibold">{meta.title}</span>
+              )}
+            </div>
+          )}
+
           <pre className="bg-white/95 dark:bg-black/55 text-gray-900 dark:text-gray-100 rounded p-3 overflow-auto max-h-64 text-xs font-mono whitespace-pre-wrap break-words">
             {JSON.stringify(notification.payload, null, 2)}
           </pre>
